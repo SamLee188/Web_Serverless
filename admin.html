@@ -167,9 +167,10 @@
         </div>
     </div>
     
+    <script src="frontend-config.js"></script>
     <script>
-        // Backend API URL - can be configured via environment variable or detected automatically
-        const BACKEND_URL = window.BACKEND_URL || (() => {
+        // Backend API URL - from configuration or fallback
+        const BACKEND_URL = window.FRONTEND_CONFIG?.backendUrl || window.BACKEND_URL || (() => {
             const currentPort = window.location.port;
             if (currentPort === '5500' || currentPort === '8080' || currentPort === '3000') {
                 return 'http://localhost:3000';

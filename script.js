@@ -5,8 +5,8 @@ class Chatbot {
         this.chatMessages = document.getElementById('chatMessages');
         this.typingIndicator = document.getElementById('typingIndicator');
         
-        // Backend API URL - can be configured via environment variable or detected automatically
-        this.backendUrl = window.BACKEND_URL || this.detectBackendUrl();
+        // Backend API URL - from configuration or fallback
+        this.backendUrl = window.FRONTEND_CONFIG?.backendUrl || window.BACKEND_URL || this.detectBackendUrl();
         
         this.isTyping = false;
         
@@ -49,6 +49,12 @@ class Chatbot {
         this.showTypingIndicator();
         
         try {
+            // Check if backend URL is available
+            if (!this.backendUrl) {
+                this.addMessage('❌ Backend server is not available. Please deploy the backend or run it locally.', 'bot');
+                return;
+            }
+            
             // Send message to backend API
             const response = await fetch(`${this.backendUrl}/api/chat`, {
                 method: 'POST',
@@ -131,16 +137,25 @@ class Chatbot {
     }
     
     detectBackendUrl() {
-        // Detect if we're running on Live Server or similar development server
+        // Detect if we're running on a deployed domain or local development
         const currentHost = window.location.hostname;
         const currentPort = window.location.port;
+        const isLocalhost = currentHost === 'localhost' || currentHost === '127.0.0.1';
+        
+        // If running on a deployed domain (not localhost)
+        if (!isLocalhost) {
+            // You need to deploy your backend and update this URL
+            // For now, we'll show an error message
+            console.error('Frontend is deployed but backend is not. Please deploy the backend or update the backend URL.');
+            return null;
+        }
         
         // If running on Live Server (port 5500) or similar, use localhost:3000 for backend
         if (currentPort === '5500' || currentPort === '8080' || currentPort === '3000') {
             return 'http://localhost:3000';
         }
         
-        // Default fallback
+        // Default fallback for local development
         return 'http://localhost:3000';
     }
     

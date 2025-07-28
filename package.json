@@ -13,6 +13,7 @@
     "test-servers": "node fix-connection.js",
     "backend-only": "node start-backend-only.js",
     "backend-dev": "nodemon start-backend-only.js",
+    "deploy-backend": "./deploy-backend.sh",
     "quick-start": "./quick-start.sh",
     "setup": "node setup.js"
   },
