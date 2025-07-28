@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chatbot Admin Panel</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
     <style>
         * {
             margin: 0;
@@ -167,14 +168,23 @@
     </div>
     
     <script>
+        // Backend API URL - can be configured via environment variable or detected automatically
+        const BACKEND_URL = window.BACKEND_URL || (() => {
+            const currentPort = window.location.port;
+            if (currentPort === '5500' || currentPort === '8080' || currentPort === '3000') {
+                return 'http://localhost:3000';
+            }
+            return 'http://localhost:3000';
+        })();
+        
         async function loadData() {
             try {
-                // Load health stats
-                const healthResponse = await fetch('/api/health');
+                // Load health stats from backend API
+                const healthResponse = await fetch(`${BACKEND_URL}/api/health`);
                 const healthData = await healthResponse.json();
                 
-                // Load conversations
-                const conversationsResponse = await fetch('/api/conversations');
+                // Load conversations from backend API
+                const conversationsResponse = await fetch(`${BACKEND_URL}/api/conversations`);
                 const conversationsData = await conversationsResponse.json();
                 
                 updateStats(healthData.stats);
@@ -237,7 +247,7 @@
         
         async function viewConversation(sessionId) {
             try {
-                const response = await fetch(`/api/conversations/${sessionId}`);
+                const response = await fetch(`${BACKEND_URL}/api/conversations/${sessionId}`);
                 const data = await response.json();
                 
                 const messages = data.messages.map(msg => 
@@ -257,7 +267,7 @@
             }
             
             try {
-                const response = await fetch(`/api/conversations/${sessionId}`, {
+                const response = await fetch(`${BACKEND_URL}/api/conversations/${sessionId}`, {
                     method: 'DELETE'
                 });
                 

@@ -5,6 +5,9 @@ class Chatbot {
         this.chatMessages = document.getElementById('chatMessages');
         this.typingIndicator = document.getElementById('typingIndicator');
         
+        // Backend API URL - can be configured via environment variable or detected automatically
+        this.backendUrl = window.BACKEND_URL || this.detectBackendUrl();
+        
         this.isTyping = false;
         
         this.initializeEventListeners();
@@ -46,8 +49,8 @@ class Chatbot {
         this.showTypingIndicator();
         
         try {
-            // Send message to backend
-            const response = await fetch('/api/chat', {
+            // Send message to backend API
+            const response = await fetch(`${this.backendUrl}/api/chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -125,6 +128,20 @@ class Chatbot {
         const hours = now.getHours().toString().padStart(2, '0');
         const minutes = now.getMinutes().toString().padStart(2, '0');
         return `${hours}:${minutes}`;
+    }
+    
+    detectBackendUrl() {
+        // Detect if we're running on Live Server or similar development server
+        const currentHost = window.location.hostname;
+        const currentPort = window.location.port;
+        
+        // If running on Live Server (port 5500) or similar, use localhost:3000 for backend
+        if (currentPort === '5500' || currentPort === '8080' || currentPort === '3000') {
+            return 'http://localhost:3000';
+        }
+        
+        // Default fallback
+        return 'http://localhost:3000';
     }
     
     updateSessionInfo(sessionInfo) {

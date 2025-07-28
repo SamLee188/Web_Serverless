@@ -6,6 +6,14 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "frontend": "node frontend-server.js",
+    "frontend-dev": "nodemon frontend-server.js",
+    "dev-both": "concurrently \"npm run dev\" \"npm run frontend-dev\"",
+    "start-both": "./start-servers.sh",
+    "test-servers": "node fix-connection.js",
+    "backend-only": "node start-backend-only.js",
+    "backend-dev": "nodemon start-backend-only.js",
+    "quick-start": "./quick-start.sh",
     "setup": "node setup.js"
   },
   "dependencies": {
@@ -15,7 +23,8 @@
     "dotenv": "^16.3.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "concurrently": "^8.2.2"
   },
   "keywords": ["chatbot", "openai", "nodejs"],
   "author": "",

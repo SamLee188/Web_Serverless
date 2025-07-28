@@ -6,7 +6,7 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// Middleware with extended CORS for development
 app.use(cors({
     origin: [
         'http://localhost:3001', 
@@ -14,7 +14,9 @@ app.use(cors({
         'http://localhost:5500',
         'http://127.0.0.1:5500',
         'http://localhost:8080',
-        'http://127.0.0.1:8080'
+        'http://127.0.0.1:8080',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000'
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -44,7 +46,16 @@ app.get('/', (req, res) => {
             health: '/api/health',
             conversations: '/api/conversations'
         },
-        frontendUrl: 'http://localhost:3001'
+        cors: {
+            allowedOrigins: [
+                'http://localhost:3001',
+                'http://127.0.0.1:3001',
+                'http://localhost:5500',
+                'http://127.0.0.1:5500',
+                'http://localhost:8080',
+                'http://127.0.0.1:8080'
+            ]
+        }
     });
 });
 
@@ -154,7 +165,11 @@ app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'OK', 
         timestamp: new Date().toISOString(),
-        stats: conversationStats
+        stats: conversationStats,
+        cors: {
+            origin: req.headers.origin,
+            allowed: true
+        }
     });
 });
 
@@ -244,16 +259,17 @@ app.listen(PORT, () => {
     console.log(`🚀 Backend API server running on http://localhost:${PORT}`);
     console.log(`📝 Make sure to set your OPENAI_API_KEY in the .env file`);
     console.log(`💾 Conversation history is being saved to memory`);
-    console.log(`🔗 Frontend should connect to http://localhost:3001`);
+    console.log(`🔗 CORS enabled for Live Server and other development servers`);
+    console.log(`🌐 Frontend can connect from: localhost:3001, 127.0.0.1:5500, etc.`);
 });
 
 // Graceful shutdown
 process.on('SIGINT', () => {
-    console.log('\n🛑 Shutting down server...');
+    console.log('\n🛑 Shutting down backend server...');
     process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-    console.log('\n🛑 Shutting down server...');
+    console.log('\n🛑 Shutting down backend server...');
     process.exit(0);
 }); 

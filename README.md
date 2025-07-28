@@ -53,21 +53,56 @@ OPENAI_API_KEY=your_openai_api_key_here
 4. Create a new API key
 5. Copy the key and paste it in your `.env` file
 
-### 4. Start the Server
+### 4. Start the Servers
+
+You can run the frontend and backend separately or together:
 
 ```bash
-# Development mode (with auto-restart)
+# Run both servers simultaneously (recommended for development)
+npm run dev-both
+
+# Or use the startup script
+npm run start-both
+
+# Or run them separately in different terminals:
+
+# Terminal 1 - Backend API server (port 3000)
 npm run dev
 
-# Production mode
-npm start
+# Terminal 2 - Frontend server (port 3001)
+npm run frontend-dev
 ```
 
 ### 5. Open Your Browser
 
-Navigate to `http://localhost:3000` to start chatting!
+Navigate to `http://localhost:3001` to start chatting!
 
-**Admin Panel**: Visit `http://localhost:3000/admin` to view conversation statistics and manage conversations.
+**Admin Panel**: Visit `http://localhost:3001/admin` to view conversation statistics and manage conversations.
+
+**Backend API**: Available at `http://localhost:3000` for direct API access.
+
+## Configuration
+
+You can customize the application by setting environment variables:
+
+```bash
+# Backend configuration
+BACKEND_URL=http://localhost:3000
+BACKEND_PORT=3000
+
+# Frontend configuration
+FRONTEND_PORT=3001
+
+# OpenAI configuration
+OPENAI_MODEL=gpt-3.5-turbo
+OPENAI_MAX_TOKENS=500
+OPENAI_TEMPERATURE=0.7
+
+# Conversation configuration
+MAX_MESSAGES=15
+CLEANUP_INTERVAL=3600000
+MAX_AGE=86400000
+```
 
 ## Project Structure
 
@@ -75,9 +110,12 @@ Navigate to `http://localhost:3000` to start chatting!
 Web_Serverless/
 ├── index.html          # Main HTML file
 ├── styles.css          # CSS styling
-├── script.js           # Frontend JavaScript
-├── server.js           # Node.js backend server
+├── script.js           # Frontend JavaScript (connects to backend API)
+├── server.js           # Backend API server (port 3000)
+├── frontend-server.js  # Frontend server (port 3001)
 ├── admin.html          # Admin panel for conversation management
+├── config.js           # Configuration file
+├── start-servers.sh    # Startup script for both servers
 ├── package.json        # Dependencies and scripts
 ├── setup.js            # Interactive setup script
 ├── .env               # Environment variables (create this)
@@ -85,14 +123,24 @@ Web_Serverless/
 └── README.md          # This file
 ```
 
-## API Endpoints
+## Server Architecture
 
-- `GET /` - Serves the main HTML page
-- `POST /api/chat` - Handles chat messages
-- `GET /api/health` - Health check endpoint with conversation stats
-- `GET /api/conversations` - Get all active conversations
-- `GET /api/conversations/:sessionId` - Get specific conversation history
-- `DELETE /api/conversations/:sessionId` - Clear specific conversation
+### Backend API Server (Port 3000)
+- **Purpose**: Handles all API requests and OpenAI integration
+- **Endpoints**:
+  - `GET /` - API information
+  - `POST /api/chat` - Handles chat messages
+  - `GET /api/health` - Health check endpoint with conversation stats
+  - `GET /api/conversations` - Get all active conversations
+  - `GET /api/conversations/:sessionId` - Get specific conversation history
+  - `DELETE /api/conversations/:sessionId` - Clear specific conversation
+
+### Frontend Server (Port 3001)
+- **Purpose**: Serves static files and HTML pages
+- **Routes**:
+  - `GET /` - Main chatbot interface
+  - `GET /admin` - Admin panel
+  - `GET /api/health` - Frontend health check
 
 ## Customization
 
