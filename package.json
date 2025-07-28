@@ -10,6 +10,7 @@
     "frontend-dev": "nodemon frontend-server.js",
     "dev-both": "concurrently \"npm run dev\" \"npm run frontend-dev\"",
     "start-both": "./start-servers.sh",
+    "separate": "node start-separate-servers.js",
     "test-servers": "node fix-connection.js",
     "backend-only": "node start-backend-only.js",
     "backend-dev": "nodemon start-backend-only.js",
