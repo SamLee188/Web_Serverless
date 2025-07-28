@@ -159,9 +159,20 @@
             </div>
             
             <div class="conversations">
-                <h2>💬 Active Conversations</h2>
+                <h2>💬 Active Conversations (Local)</h2>
                 <div id="conversationsList">
                     <!-- Conversations will be loaded here -->
+                </div>
+            </div>
+
+            <div class="conversations">
+                <h2>🗄️ Database Conversations (Supabase)</h2>
+                <div style="margin-bottom: 15px;">
+                    <button class="btn" onclick="loadSupabaseData()">🔄 Refresh Database</button>
+                    <button class="btn" onclick="testSupabaseConnection()">🔗 Test Connection</button>
+                </div>
+                <div id="supabaseConversationsList">
+                    <p style="text-align: center; color: #64748b; padding: 20px;">Click "Refresh Database" to load Supabase conversations</p>
                 </div>
             </div>
         </div>
@@ -286,6 +297,105 @@
         
         // Load data on page load
         document.addEventListener('DOMContentLoaded', loadData);
+        
+        // Supabase functions
+        async function loadSupabaseData() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/supabase/conversations`);
+                const data = await response.json();
+                
+                updateSupabaseConversations(data.conversations);
+                
+            } catch (error) {
+                console.error('Error loading Supabase data:', error);
+                alert('Error loading database data. Please check if the server is running.');
+            }
+        }
+        
+        async function testSupabaseConnection() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/supabase/test`);
+                const data = await response.json();
+                
+                if (data.connected) {
+                    alert('✅ Supabase connection successful!');
+                } else {
+                    alert('❌ Supabase connection failed: ' + (data.error || 'Unknown error'));
+                }
+                
+            } catch (error) {
+                console.error('Error testing Supabase connection:', error);
+                alert('Error testing connection');
+            }
+        }
+        
+        function updateSupabaseConversations(conversations) {
+            const supabaseList = document.getElementById('supabaseConversationsList');
+            
+            if (conversations.length === 0) {
+                supabaseList.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">No conversations in database</p>';
+                return;
+            }
+            
+            supabaseList.innerHTML = conversations.map(conv => {
+                const createdAt = new Date(conv.created_at).toLocaleString();
+                const messageCount = conv.messages ? conv.messages.length : 0;
+                
+                return `
+                    <div class="conversation-item">
+                        <div class="conversation-info">
+                            <div class="conversation-id">ID: ${conv.conversation_id}</div>
+                            <div class="conversation-details">
+                                Messages: ${messageCount} | 
+                                Created: ${createdAt}
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn" onclick="viewSupabaseConversation('${conv.conversation_id}')">👁️ View</button>
+                            <button class="btn btn-danger" onclick="deleteSupabaseConversation('${conv.conversation_id}')">🗑️ Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        async function viewSupabaseConversation(conversationId) {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/supabase/conversations/${conversationId}`);
+                const data = await response.json();
+                
+                const messages = data.messages.map(msg => 
+                    `${msg.role === 'user' ? '👤' : '🤖'} ${msg.content}`
+                ).join('\n\n');
+                
+                alert(`Database Conversation (${conversationId}):\n\n${messages}`);
+            } catch (error) {
+                console.error('Error viewing Supabase conversation:', error);
+                alert('Error loading conversation from database');
+            }
+        }
+        
+        async function deleteSupabaseConversation(conversationId) {
+            if (!confirm(`Are you sure you want to delete conversation ${conversationId} from the database?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/supabase/conversations/${conversationId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    alert('Conversation deleted from database successfully!');
+                    loadSupabaseData(); // Refresh the data
+                } else {
+                    alert('Error deleting conversation from database');
+                }
+            } catch (error) {
+                console.error('Error deleting Supabase conversation:', error);
+                alert('Error deleting conversation from database');
+            }
+        }
         
         // Auto-refresh every 30 seconds
         setInterval(loadData, 30000);

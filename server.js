@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const OpenAI = require('openai');
+const supabaseService = require('./supabase-service');
 require('dotenv').config();
 
 const app = express();
@@ -32,13 +33,22 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Store conversation history in a dictionary/object
+// Store conversation history in memory (for session management)
 const conversationHistory = {};
 const conversationStats = {
     totalConversations: 0,
     totalMessages: 0,
     activeSessions: 0
 };
+
+// Test Supabase connection on startup
+supabaseService.testConnection().then(success => {
+    if (success) {
+        console.log('✅ Supabase connection established');
+    } else {
+        console.log('⚠️  Supabase connection failed - using local storage only');
+    }
+});
 
 // API Routes only - Frontend is served separately
 app.get('/', (req, res) => {
@@ -123,12 +133,27 @@ app.post('/api/chat', async (req, res) => {
 
         conversationStats.totalMessages += 2; // Count both user and bot messages
 
+        // Save conversation to Supabase
+        try {
+            if (session.conversationId) {
+                // Update existing conversation
+                await supabaseService.updateConversation(session.conversationId, session.messages);
+            } else {
+                // Create new conversation
+                const result = await supabaseService.saveConversation(sessionId, session.messages);
+                session.conversationId = result.conversationId;
+            }
+        } catch (error) {
+            console.error('⚠️  Failed to save to Supabase, using local storage only:', error.message);
+        }
+
         // Send response back to client
         res.json({ 
             response: botResponse,
             sessionInfo: {
                 messageCount: session.messageCount,
-                sessionId: sessionId
+                sessionId: sessionId,
+                conversationId: session.conversationId
             }
         });
 
@@ -155,12 +180,38 @@ app.post('/api/chat', async (req, res) => {
 });
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-    res.json({ 
-        status: 'OK', 
-        timestamp: new Date().toISOString(),
-        stats: conversationStats
-    });
+app.get('/api/health', async (req, res) => {
+    try {
+        // Get stats from Supabase if available
+        let stats = conversationStats;
+        try {
+            const supabaseStats = await supabaseService.getConversationStats();
+            stats = {
+                ...conversationStats,
+                ...supabaseStats,
+                storage: 'supabase'
+            };
+        } catch (error) {
+            console.error('⚠️  Using local stats due to Supabase error:', error.message);
+            stats = {
+                ...conversationStats,
+                storage: 'local'
+            };
+        }
+
+        res.json({ 
+            status: 'OK', 
+            timestamp: new Date().toISOString(),
+            stats: stats
+        });
+    } catch (error) {
+        console.error('Error in health endpoint:', error);
+        res.status(500).json({ 
+            status: 'ERROR', 
+            timestamp: new Date().toISOString(),
+            error: error.message
+        });
+    }
 });
 
 // Get conversation history for a session
@@ -206,6 +257,75 @@ app.delete('/api/conversations/:sessionId', (req, res) => {
         res.json({ message: 'Conversation cleared successfully' });
     } else {
         res.status(404).json({ error: 'Conversation not found' });
+    }
+});
+
+// Supabase-specific endpoints
+
+// Get all conversations from Supabase
+app.get('/api/supabase/conversations', async (req, res) => {
+    try {
+        const conversations = await supabaseService.getAllConversations();
+        res.json({
+            conversations,
+            count: conversations.length
+        });
+    } catch (error) {
+        console.error('Error fetching conversations from Supabase:', error);
+        res.status(500).json({ 
+            error: 'Failed to fetch conversations from database' 
+        });
+    }
+});
+
+// Get a specific conversation from Supabase
+app.get('/api/supabase/conversations/:conversationId', async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        const conversation = await supabaseService.getConversation(conversationId);
+        
+        if (!conversation) {
+            return res.status(404).json({ error: 'Conversation not found' });
+        }
+        
+        res.json(conversation);
+    } catch (error) {
+        console.error('Error fetching conversation from Supabase:', error);
+        res.status(500).json({ 
+            error: 'Failed to fetch conversation from database' 
+        });
+    }
+});
+
+// Delete a conversation from Supabase
+app.delete('/api/supabase/conversations/:conversationId', async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        await supabaseService.deleteConversation(conversationId);
+        res.json({ message: 'Conversation deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting conversation from Supabase:', error);
+        res.status(500).json({ 
+            error: 'Failed to delete conversation from database' 
+        });
+    }
+});
+
+// Test Supabase connection
+app.get('/api/supabase/test', async (req, res) => {
+    try {
+        const isConnected = await supabaseService.testConnection();
+        res.json({ 
+            connected: isConnected,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Error testing Supabase connection:', error);
+        res.status(500).json({ 
+            connected: false,
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
     }
 });
 

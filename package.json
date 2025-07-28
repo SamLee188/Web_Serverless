@@ -16,9 +16,11 @@
     "backend-dev": "nodemon start-backend-only.js",
     "deploy-backend": "./deploy-backend.sh",
     "quick-start": "./quick-start.sh",
-    "setup": "node setup.js"
+    "setup": "node setup.js",
+    "setup-supabase": "node setup-supabase.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.38.4",
     "express": "^4.18.2",
     "openai": "^4.20.1",
     "cors": "^2.8.5",
